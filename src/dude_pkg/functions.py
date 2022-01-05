@@ -1,4 +1,5 @@
 from pandas import merge
+import pandas as pd
 from pandas.core.frame import DataFrame
 import networkx as nx
 
@@ -72,3 +73,20 @@ def create_graph(pos): # -> networkx.classes.graph.Graph
     for n, p in pos.items():
         G.nodes[n]['pos'] = p
     return G
+
+def pre_network(table,gdata):
+    gdata = pd.merge(gdata,table.loc[:,["stop_id","route_id"]],left_index=True,right_on="stop_id")
+    nameDict = gdata.loc[:,["stop_id","stop_name"]].set_index("stop_id").to_dict()["stop_name"]
+    table["stop_name"]= table.stop_id.map(lambda x:nameDict[x])
+    source = []
+    target = []
+    for e1, e2 in zip(table.loc[0:len(table)-1,["stop_sequence","stop_name"]].values,table.loc[1:,["stop_sequence","stop_name"]].values):
+        if e1[0] < e2[0]:
+            source.append(e1[1])
+            target.append(e2[1])
+
+    df = pd.DataFrame(pd.Series(source),columns=["source"])
+    df["target"] = target
+    df = pd.merge(df,gdata.groupby("stop_name").first(),left_on="source",right_index=True)
+    df = df.groupby(["source","target","route_id"]).first().reset_index()
+    return df
