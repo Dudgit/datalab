@@ -1,3 +1,4 @@
+import pandas as pd
 features = [
             #"trip_id",
             "route_id",
@@ -9,3 +10,9 @@ features = [
 
 PATH = "../data/"
 rp, stp , sp ,tp = ("routes","stop_times","stops","trips")
+
+table = pd.merge( 
+                pd.read_csv(f"{PATH}{tp}.txt", low_memory=False)  ,
+                pd.read_csv(f"{PATH}{stp}.txt", low_memory=False) ,
+                on = "trip_id"
+                ).loc[:,features]
